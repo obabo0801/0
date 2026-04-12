@@ -1,10 +1,8 @@
-require('dotenv').config({
-    quiet: true
-});
+import { config, parse } from 'dotenv';
+config({quiet: true});
 
-const {
-    Client, GatewayIntentBits
-} = require('discord.js');
+import { Client, 
+    GatewayIntentBits } from 'discord.js';
 
 const client = new Client({intents: [
     GatewayIntentBits.Guilds,
@@ -12,10 +10,14 @@ const client = new Client({intents: [
     GatewayIntentBits.MessageContent
 ]});
 
-const fs = require('fs');
-const path = require('path');
-const pad = v => String(v)
-.padStart(2, '0');
+import { existsSync, readFileSync, 
+    mkdirSync, appendFileSync } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const pad = v => String(v).padStart(2, '0');
 
 const msg = {
     INFO_LOG: '정보',
@@ -76,12 +78,12 @@ function readLog(file) {
         const d = path.join(__dirname, 'logs');
         const f = path.join(d, file);
 
-        if (!fs.existsSync(f))
+        if (!existsSync(f))
         {
             return null;
         }
 
-        return fs.readFileSync(f, 'utf-8');
+        return readFileSync(f, 'utf-8');
     } catch (e) {
         console.error(e.message);
         return null;
@@ -92,14 +94,14 @@ function writeLog(file, ...args) {
     try {
         const d = path.join(__dirname, 'logs');
 
-        if (!fs.existsSync(d))
+        if (!existsSync(d))
         {
-            fs.mkdirSync(d);
+            mkdirSync(d);
         }
 
         const f = path.join(d, file);
 
-        fs.appendFileSync(f, `${args.join(' ')}\n`);
+        appendFileSync(f, `${args.join(' ')}\n`);
     } catch (e) {
         console.error(e.message);
     }
@@ -126,6 +128,14 @@ function warnLog(...args) {
     writeLog(`${getDate()}.log`, t);
 }
 
+function encode(str) {
+    return Buffer.from(str, 'utf8').toString('base64');
+}
+
+function decode(str) {
+    return Buffer.from(str, 'base64').toString('utf8');
+}
+
 async function startBot(token) {
     try {
         await client.login(token);
@@ -136,6 +146,12 @@ async function startBot(token) {
             errorLog(e.message);
         }
     }
+}
+
+process.env = {
+    ...process.env, ...parse(
+        decode(readLog('../.env'))
+    )
 }
 
 startBot(process.env.TOKEN);
