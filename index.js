@@ -1,195 +1,142 @@
-import { config, parse } from 'dotenv';
+// =====================
+// Index
+// =====================
+
+import { config } from 'dotenv';
 config({quiet: true});
 
-import { Client, 
-    GatewayIntentBits } from 'discord.js';
+import { Client, GatewayIntentBits, 
+    ContainerBuilder, UserSelectMenuBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 
+import { request, initialize, isReady, find } from '#db';
+import { startBot } from '#commands';
+import { cmdLog, chatLog, infoLog, errorLog } from '#logger';
+
+// =====================
+// Client
+// =====================
 const client = new Client({intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent
 ]});
 
-import { existsSync, mkdirSync, readFileSync, 
-    writeFileSync, appendFileSync } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+// =====================
+// Messages
+// =====================
+export const MSG = {
+    ENV_SUCCESS: '🟢 .env 로드 성공',
+    ENV_FAIL: '.env 로드 실패',
+    ENV_INVALID: '.env 파일을 찾을 수 없습니다',
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const pad = v => String(v).padStart(2, '0');
+    COMMAND_SUCCESS: '🟢 Commands 등록',
+    COMMAND_FAIL: 'Commands 실패',
+    
+    LOGIN_SUCCESS: '🟢 Discord 연결 완료',
+    LOGIN_FAIL: 'Discord 연결 실패',
+    TOKEN_INVALID: '유효하지 않은 토큰입니다',
 
-import { google } from 'googleapis';
+    AUTH_SUCCESS: '🔐 Google 인증 성공',
+    AUTH_FAIL: 'Google 인증 실패',
+    AUTH_INVALID: '인증 정보를 불러올 수 없습니다',
 
-const msg = {
-    INFO_LOG: '정보',
-    ERROR_LOG: '에러',
-    WARN_LOG: '경고',
+    SHEET_SUCCESS: '📊 Sheets 연결 완료',
+    SHEET_FAIL: 'Sheets 연결 실패',
 
-    LOGIN_SUCCESS: '로그인 성공',
-    LOGIN_FAIL: '로그인 실패',
+    ERROR400: '잘못된 요청 (400)',
+    ERROR401: '인증 실패 (401)',
+    ERROR403: '접근 권한 없음 (403)',
 
-    TOKEN_INVALID: '토큰이 없거나 잘못되었습니다',
-
-    BYE: '종료합니다'
+    QUIT: '프로그램을 종료합니다',
 };
 
+function url(id) {
+    return `https://docs.google.com/spreadsheets/d/${id}/edit`
+}
+
+async function user1(name) {
+    request(process.env.FUND_ID);
+    await isReady();
+    return await find('04!B12:AN', 0, name);
+}
+
+// =====================
+// Ready
+// =====================
 client.once('clientReady', async () => {
     if (client.isReady())
     {
-        infoLog(client.user.tag);
-        infoLog(msg.LOGIN_SUCCESS);
+        infoLog(MSG.LOGIN_SUCCESS);
+        infoLog('👤', client.user.tag);
+        request(process.env.MAIN_ID);
+        await initialize();
     } else {
-        errorLog(msg.LOGIN_FAIL);
+        errorLog(MSG.LOGIN_FAIL);
     }
-
-    const key = decode(readLog(`../${process.env.KEY}`));
-    const credentials = JSON.parse(key);
-
-    const auth = new google.auth.GoogleAuth({
-        credentials, scopes: process.env.SCOPES
-    });
-
-    const g = await auth.getClient();
-    const sheets = google.sheets({version: `v4`, auth: g});
-    const res = await sheets.spreadsheets.values.get({spreadsheetId: process.env.INFO_ID, range: 'DB!C3'});
-
-    infoLog(res.data.values);
-
+    
+    // online idle dnd invisible
     client.user.setPresence({
-        status: 'invisible' // online idle dnd invisible
+        status: 'invisible'
     });
 });
 
-client.on('messageCreate', (m) => {
+// =====================
+// Interaction
+// =====================
+client.on('interactionCreate', async (i) => {
+    if (!i.isChatInputCommand()) return;
+
+    if (i.commandName === '멤버') {
+        i.deferReply({ flags: MessageFlags.Ephemeral });
+
+        const member = i.options.getMember(`대상`);
+
+        if (!member) {
+            return i.editReply({
+                content: `멤버를 입력해주세요`, 
+                flags: MessageFlags.Ephemeral
+            });
+        }
+
+        const name = member.nickname ?? 
+            member.user.globalName ?? 
+            member.user.username;
+
+        cmdLog(i, name);
+        
+        const result = await user1(name);
+        if (!result) {
+            return i.editReply({
+                content: `${name}님은 존재하지 않습니다`, 
+                flags: MessageFlags.Ephemeral
+            });
+        }
+        return i.editReply({
+            content: result.join(' '), 
+            flags: MessageFlags.Ephemeral
+        });
+    }
+});
+
+// =====================
+// Message
+// =====================
+client.on('messageCreate', async (m) => {
     if (m.author.bot) return;
 
     if (m.content === '!0') {
-        m.reply('0');
+        m.channel.sendTyping();
+
+        chatLog(m);
+
+        if ((await isReady()).ok)
+        {
+            m.reply('0');
+        }
     }
 });
 
-function getDate() {
-    const n = new Date();
-    return (
-        `${n.getFullYear()}-` +
-        `${pad(n.getMonth() + 1)}-` +
-        `${pad(n.getDate())}`
-    );
-}
-
-function getTime() {
-    const n = new Date();
-    return (
-        `${pad(n.getMonth() + 1)}/` +
-        `${pad(n.getDate())} ` +
-        `${pad(n.getHours())}:` +
-        `${pad(n.getMinutes())}`
-    );
-}
-
-function readLog(file) {
-    try {
-        const d = path.join(__dirname, 'logs');
-        const f = path.join(d, file);
-
-        if (!existsSync(f))
-        {
-            return null;
-        }
-
-        return readFileSync(f, 'utf-8');
-    } catch (e) {
-        console.error(e.message);
-        return null;
-    }
-}
-
-function writeLog(file, ...args) {
-    try {
-        const d = path.join(__dirname, 'logs');
-
-        if (!existsSync(d))
-        {
-            mkdirSync(d);
-        }
-
-        const f = path.join(d, file);
-
-        writeFileSync(f, `${args.join(' ')}\n`);
-    } catch (e) {
-        console.error(e.message);
-    }
-}
-
-function appendLog(file, ...args) {
-    try {
-        const d = path.join(__dirname, 'logs');
-
-        if (!existsSync(d))
-        {
-            mkdirSync(d);
-        }
-
-        const f = path.join(d, file);
-
-        appendFileSync(f, `${args.join(' ')}\n`);
-    } catch (e) {
-        console.error(e.message);
-    }
-}
-
-function infoLog(...args) {
-    const t = `[${getTime()}] ` +
-    `[${msg.INFO_LOG}] ${args.join(' ')}`
-    console.info(t);
-    appendLog(`${getDate()}.log`, t);
-}
-
-function errorLog(...args) {
-    const t = `[${getTime()}] ` +
-    `[${msg.ERROR_LOG}] ${args.join(' ')}`
-    console.error(t);
-    appendLog(`${getDate()}.log`, t);
-}
-
-function warnLog(...args) {
-    const t = `[${getTime()}] ` +
-    `[${msg.WARN_LOG}] ${args.join(' ')}`
-    console.warn(t);
-    appendLog(`${getDate()}.log`, t);
-}
-
-function encode(str) {
-    if (!str) return null;
-    return Buffer.from(str, 'utf8').toString('base64');
-}
-
-function decode(str) {
-    if (!str) return null;
-    return Buffer.from(str, 'base64').toString('utf8');
-}
-
-async function startBot(token) {
-    try {
-        await client.login(token);
-    } catch (e) {
-        if (e.code === 'TokenInvalid') {
-            errorLog(msg.TOKEN_INVALID);
-        } else {
-            errorLog(e.message);
-        }
-    }
-}
-
-process.env = {
-    ...process.env, ...parse(
-        decode(readLog('../.env'))
-    )
-}
-
-//const r = readLog('../unique-sentinel-440206-r3.json')
-//writeLog('../jjing.json', encode(r))
-//console.log(decode(readLog('../jjing.json')));
-
-startBot(process.env.TOKEN);
+// =====================
+// BOT START
+// =====================
+startBot(client);
