@@ -2,11 +2,18 @@
 // Utils
 // =====================
 
-import { existsSync, mkdirSync, readFileSync, 
-    writeFileSync, appendFileSync } from 'fs';
 import path from 'path';
 
-const pad = v => String(v).padStart(2, '0');
+import {
+    existsSync,
+    mkdirSync,
+    readFileSync,
+    writeFileSync,
+    appendFileSync
+} from 'fs';
+
+const pad = v => String(v)
+.padStart(2, '0');
 const root = process.cwd();
 
 export function getDate() {
@@ -74,6 +81,10 @@ export function appendFile(file, ...args) {
     }
 }
 
+function isBase64(str) {
+    return /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(str);
+}
+
 export function encode(str) {
     if (!str) return null;
     try {
@@ -86,6 +97,9 @@ export function encode(str) {
 
 export function decode(str) {
     if (!str) return null;
+    if (!isBase64(str)) {
+        return str;
+    }
     try {
         return Buffer.from(str, 'base64')
         .toString('utf8');

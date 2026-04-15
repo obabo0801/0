@@ -19,7 +19,6 @@ export async function initialize() {
     console.log('');
     createAuth();
     await createSheets();
-    console.log('');
 }
 
 export function createAuth() {

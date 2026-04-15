@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 > nul
-title 🐕
+title Jjing Bot 🐕
 cd /d "%~dp0"
 node index.js
 pause

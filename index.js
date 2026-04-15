@@ -1,40 +1,68 @@
 // =====================
-// Index
+// ENV
 // =====================
-
 import { config } from 'dotenv';
 config({quiet: true});
 
-import { Client, GatewayIntentBits, 
-    ContainerBuilder, UserSelectMenuBuilder, ButtonStyle, MessageFlags } from 'discord.js';
-
-import { request, initialize, isReady, find } from '#db';
-import { startBot } from '#commands';
-import { cmdLog, chatLog, infoLog, errorLog } from '#logger';
+// =====================
+// Discord
+// =====================
+import {
+    Client,
+    GatewayIntentBits,
+    SlashCommandBuilder,
+    MessageFlags,
+    ContainerBuilder,
+    UserSelectMenuBuilder,
+    ButtonStyle,
+    StringSelectMenuBuilder,
+    ButtonBuilder
+} from 'discord.js';
 
 // =====================
-// Client
+// External
 // =====================
-const client = new Client({intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-]});
 
 // =====================
-// Messages
+// Internal
+// =====================
+import {
+    request, 
+    initialize, 
+    isReady, 
+    find
+} from '#db';
+
+import {
+    startBot
+} from '#commands';
+
+import {
+    slashLog,
+    cmdLog,
+    chatLog,
+    infoLog,
+    errorLog
+} from '#logger';
+
+// =====================
+// Constants
 // =====================
 export const MSG = {
-    ENV_SUCCESS: '🟢 .env 로드 성공',
+    ENV_SUCCESS: '📄 .env 로드 성공',
     ENV_FAIL: '.env 로드 실패',
     ENV_INVALID: '.env 파일을 찾을 수 없습니다',
 
-    COMMAND_SUCCESS: '🟢 Commands 등록',
-    COMMAND_FAIL: 'Commands 실패',
+    COMMAND_SUCCESS: '🌍 Global Commands 등록',
+    COMMAND_FAIL: 'Global Commands 실패',
+
+    GCOMMAND_SUCCESS: '🏠 Guild Commands 등록',
+    GCOMMAND_FAIL: 'Guild Commands 실패',
     
     LOGIN_SUCCESS: '🟢 Discord 연결 완료',
-    LOGIN_FAIL: 'Discord 연결 실패',
+    LOGIN_FAIL: '🔴 Discord 연결 실패',
     TOKEN_INVALID: '유효하지 않은 토큰입니다',
+    DISALLOWED_INTENTS: '권한이 없습니다 ',
 
     AUTH_SUCCESS: '🔐 Google 인증 성공',
     AUTH_FAIL: 'Google 인증 실패',
@@ -50,42 +78,62 @@ export const MSG = {
     QUIT: '프로그램을 종료합니다',
 };
 
+// =====================
+// Client
+// =====================
+const client = new Client({intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+]});
+
+// =====================
+// Commands
+// =====================
+export const commands = [
+
+];
+
+export const gcommands = [
+    new SlashCommandBuilder()
+    .setName('멤버')
+    .setDescription('멤버')
+    .addUserOption(o =>
+        o.setName('대상')
+        .setDescription('대상')
+        .setRequired(true)
+    )
+    .toJSON()
+];
+
+// =====================
+// URL
+// =====================
 function url(id) {
     return `https://docs.google.com/spreadsheets/d/${id}/edit`
 }
 
-async function user1(name) {
+// =====================
+// Method
+// =====================
+async function findUser(name) {
     request(process.env.FUND_ID);
     await isReady();
     return await find('04!B12:AN', 0, name);
 }
 
 // =====================
-// Ready
+// Execute
 // =====================
-client.once('clientReady', async () => {
-    if (client.isReady())
-    {
-        infoLog(MSG.LOGIN_SUCCESS);
-        infoLog('👤', client.user.tag);
-        request(process.env.MAIN_ID);
-        await initialize();
-    } else {
-        errorLog(MSG.LOGIN_FAIL);
-    }
-    
-    // online idle dnd invisible
-    client.user.setPresence({
-        status: 'invisible'
-    });
-});
+async function commandExecute(i) {
+
+}
 
 // =====================
-// Interaction
+// Slash
 // =====================
-client.on('interactionCreate', async (i) => {
-    if (!i.isChatInputCommand()) return;
-
+async function commandSlash(i) {
+    slashLog(i);
     if (i.commandName === '멤버') {
         i.deferReply({ flags: MessageFlags.Ephemeral });
 
@@ -102,9 +150,9 @@ client.on('interactionCreate', async (i) => {
             member.user.globalName ?? 
             member.user.username;
 
-        cmdLog(i, name);
+        slashLog(i, name);
         
-        const result = await user1(name);
+        const result = await findUser(name);
         if (!result) {
             return i.editReply({
                 content: `${name}님은 존재하지 않습니다`, 
@@ -116,23 +164,69 @@ client.on('interactionCreate', async (i) => {
             flags: MessageFlags.Ephemeral
         });
     }
+}
+
+// =====================
+// Chatting
+// =====================
+async function commandChatting(m) {
+    chatLog(m);
+    if (m.content === '!0') {
+        m.channel.sendTyping();
+        chatLog(m);
+        if ((await isReady()).ok)
+        {
+            m.reply('0');
+        }
+    }
+}
+
+// =====================
+// Ready
+// =====================
+client.once('clientReady', async () => {
+    client.user.setPresence({
+        status: 'online'
+    });
+
+    if (client.isReady())
+    {
+        infoLog(MSG.LOGIN_SUCCESS);
+        infoLog('👤', client.user.tag);
+        request(process.env.MAIN_ID);
+        await initialize();
+    } else {
+        errorLog(MSG.LOGIN_FAIL);
+    }
+});
+
+// =====================
+// Interaction
+// =====================
+client.on('interactionCreate', async (i) => {
+    try {
+        if (i.isChatInputCommand())
+        {
+            await commandSlash(i);
+        } else {
+            await commandExecute(i);
+        }
+    } catch (e) {
+        errorLog('I', e);
+    }
 });
 
 // =====================
 // Message
 // =====================
 client.on('messageCreate', async (m) => {
-    if (m.author.bot) return;
-
-    if (m.content === '!0') {
-        m.channel.sendTyping();
-
-        chatLog(m);
-
-        if ((await isReady()).ok)
+    try {
+        if (!m.author.bot)
         {
-            m.reply('0');
+            await commandChatting(m);
         }
+    } catch (e) {
+        errorLog('M', e);
     }
 });
 
