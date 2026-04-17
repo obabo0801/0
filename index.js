@@ -28,7 +28,7 @@ import {
 // =====================
 import {
     request, 
-    initialize, 
+    create, 
     isReady, 
     find
 } from '#db';
@@ -88,23 +88,24 @@ const client = new Client({intents: [
 ]});
 
 // =====================
+// Initialize
+// =====================
+export function initialize() {
+    console.log('────────────────────')
+    console.log('　　Jjing Bot 🐕　　');
+    console.log('────────────────────')
+    initCommands();
+}
+
+// =====================
 // Commands
 // =====================
-export const commands = [
+export let commands = [];
+export let gcommands = [];
 
-];
+export function initCommands() {
 
-export const gcommands = [
-    new SlashCommandBuilder()
-    .setName('멤버')
-    .setDescription('멤버')
-    .addUserOption(o =>
-        o.setName('대상')
-        .setDescription('대상')
-        .setRequired(true)
-    )
-    .toJSON()
-];
+}
 
 // =====================
 // URL
@@ -186,7 +187,7 @@ async function commandChatting(m) {
 // =====================
 client.once('clientReady', async () => {
     client.user.setPresence({
-        status: 'online'
+        status: 'invisible'
     });
 
     if (client.isReady())
@@ -194,7 +195,7 @@ client.once('clientReady', async () => {
         infoLog(MSG.LOGIN_SUCCESS);
         infoLog('👤', client.user.tag);
         request(process.env.MAIN_ID);
-        await initialize();
+        await create();
     } else {
         errorLog(MSG.LOGIN_FAIL);
     }

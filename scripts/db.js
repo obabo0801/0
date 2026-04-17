@@ -4,18 +4,18 @@
 
 import { google } from 'googleapis';
 import { MSG } from '#index';
-import { infoLog, sendLog, errorLog } from '#logger';
 import { decode } from '#utils';
+import { sendLog, infoLog, errorLog } from '#logger';
 
 const normalize = v => String(v ?? '').trim();
 
 let id, title, auth, sheets;
 
-export async function request(str) {
-    id = str;
+export async function request(sheetId) {
+    id = sheetId;
 }
 
-export async function initialize() {
+export async function create() {
     console.log('');
     createAuth();
     await createSheets();

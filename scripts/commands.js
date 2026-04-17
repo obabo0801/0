@@ -2,17 +2,17 @@
 // Commands
 // =====================
 
-import { commands, gcommands } from '#index';
+import { initialize, commands, gcommands } from '#index';
 import { parse } from 'dotenv';
 import { REST, Routes } from 'discord.js';
 import { MSG } from '#index';
 import { readFile, decode } from '#utils';
 import { infoLog, errorLog } from '#logger';
 
-export function parseEnv(str) {
+export function parseEnv() {
     try {
-        const data = readFile(str);
-        if (!str || !data) {
+        const data = readFile('.env');
+        if (!data) {
             errorLog(MSG.ENV_INVALID);
             process.exit(1);
         }
@@ -25,14 +25,14 @@ export function parseEnv(str) {
     }
 }
 
-export async function createCommands(body) {
+export async function createCommands() {
     try {
         const rest = new REST({ version: '10' })
         .setToken(decode(process.env.TOKEN));
         await rest.put(
             Routes.applicationCommands(
                 decode(process.env.CLIENT_ID)), 
-            { body: body }
+            { body: commands }
         );
         infoLog(MSG.COMMAND_SUCCESS);
     } catch (e) { 
@@ -40,7 +40,7 @@ export async function createCommands(body) {
     }
 }
 
-export async function createGuildCommands(body) {
+export async function createGuildCommands() {
     try {
         const rest = new REST({ version: '10' })
         .setToken(decode(process.env.TOKEN));
@@ -48,7 +48,7 @@ export async function createGuildCommands(body) {
             Routes.applicationGuildCommands(
                 decode(process.env.CLIENT_ID), 
                 decode(process.env.SERVER_ID)), 
-            { body: body }
+            { body: gcommands }
         );
         infoLog(MSG.GCOMMAND_SUCCESS);
     } catch (e) { 
@@ -58,12 +58,9 @@ export async function createGuildCommands(body) {
 
 export async function startBot(client) {
     try {
-        console.log('────────────────────')
-        console.log('　　Jjing Bot 🐕　　');
-        console.log('────────────────────')
-        parseEnv('.env');
-        await createCommands(commands);
-        await createGuildCommands(gcommands);
+        initialize(); parseEnv();
+//        await createCommands();
+//        await createGuildCommands();
         await client.login(
             decode(process.env.TOKEN)
         );
@@ -79,9 +76,14 @@ export async function startBot(client) {
     }
 }
 
+process.on('SIGINT', () => {
+    infoLog(MSG.QUIT);
+    process.exit();
+});
+
 process.on('SIGTERM', () => {
     infoLog(MSG.QUIT);
-    process.exit(0);
+    process.exit();
 });
 
 process.on('uncaughtException', (e) => {
