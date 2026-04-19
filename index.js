@@ -79,6 +79,13 @@ export const MSG = {
 };
 
 // =====================
+// URL
+// =====================
+function sheetUrl(id) {
+    return `https://docs.google.com/spreadsheets/d/${id}/edit`
+}
+
+// =====================
 // Client
 // =====================
 const client = new Client({intents: [
@@ -98,29 +105,31 @@ export function initialize() {
 }
 
 // =====================
-// Commands
-// =====================
-export let commands = [];
-export let gcommands = [];
-
-export function initCommands() {
-
-}
-
-// =====================
-// URL
-// =====================
-function url(id) {
-    return `https://docs.google.com/spreadsheets/d/${id}/edit`
-}
-
-// =====================
 // Method
 // =====================
 async function findUser(name) {
     request(process.env.FUND_ID);
     await isReady();
     return await find('04!B12:AN', 0, name);
+}
+
+// =====================
+// Commands
+// =====================
+export let commands = [];
+export let gcommands = [];
+
+export function initCommands() {
+    gcommands = [
+        new SlashCommandBuilder()
+        .setName('jjing')
+        .setDescription('jjing')
+        .addStringOption(o =>
+            o.setName('add')
+            .setDescription('add')
+        )
+        .toJSON()
+    ];
 }
 
 // =====================
@@ -135,33 +144,22 @@ async function commandExecute(i) {
 // =====================
 async function commandSlash(i) {
     slashLog(i);
-    if (i.commandName === '멤버') {
-        i.deferReply({ flags: MessageFlags.Ephemeral });
+    if (i.commandName === 'jjing') {
+        await i.deferReply({ flags: MessageFlags.Ephemeral });
 
-        const member = i.options.getMember(`대상`);
+        const s = i.options.getString(`add`);
 
-        if (!member) {
+        if (!s) {
             return i.editReply({
-                content: `멤버를 입력해주세요`, 
+                content: `s`, 
                 flags: MessageFlags.Ephemeral
             });
         }
 
-        const name = member.nickname ?? 
-            member.user.globalName ?? 
-            member.user.username;
-
-        slashLog(i, name);
+        slashLog(i, 'jjing');
         
-        const result = await findUser(name);
-        if (!result) {
-            return i.editReply({
-                content: `${name}님은 존재하지 않습니다`, 
-                flags: MessageFlags.Ephemeral
-            });
-        }
         return i.editReply({
-            content: result.join(' '), 
+            content: 'jjing', 
             flags: MessageFlags.Ephemeral
         });
     }

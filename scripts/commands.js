@@ -60,7 +60,7 @@ export async function startBot(client) {
     try {
         initialize(); parseEnv();
 //        await createCommands();
-//        await createGuildCommands();
+        await createGuildCommands();
         await client.login(
             decode(process.env.TOKEN)
         );
