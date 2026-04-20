@@ -21,7 +21,7 @@ Jjing Bot은 Discord 슬래시 명령어를 통해 Google Sheets 데이터를 Di
 
 ## 📁 프로젝트 구조
 ```
-.
+
 ├── index.js
 
 ├── core/
