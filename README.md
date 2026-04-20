@@ -8,28 +8,39 @@ Discord + Google Sheets 데이터 조회 자동화 봇
 
 ## 📌 개요
 
-Jjing Bot은 Discord 슬래시 명령어를 통해  
-Google Sheets 데이터를 조회하고 관리하는 봇입니다.
+Jjing Bot은 Discord 슬래시 명령어를 통해 Google Sheets 데이터를 Discord에서 쉽게 조회하고 관리할 수 있는 봇입니다.
 
 ---
 
 ## ⚙️ 기능
-- 💬 Discord Slash Commands
-- 📊 Google Sheets API 연동
-- 🔎 사용자 기반 데이터 검색
-- 🧾 자동 로그 저장 (날짜별)
+* 💬 Slash Command 기반 인터랙션
+* 📊 Google Sheets 연동
+* 📝 로그 시스템 (파일 저장)
 
 ---
 
 ## 📁 프로젝트 구조
-```bash
-index.js        : 메인 실행 파일
+```
+.
+├── index.js
 
-scripts/
- ├─ commands.js : 슬래시 명령어 등록
- ├─ db.js       : Google Sheets API 처리
- ├─ logger.js   : 로그 기록 및 시스템 관리
- └─ utils.js    : 파일 / 시간 / Base64
+├── core/
+│   ├── client.js
+│   └── handler.js
+
+├── commands/
+│   ├── food.js
+│   ├── link.js
+│   └── loader.js
+
+├── services/
+│   └── sheets.js
+
+├── utils/
+│   ├── base64.js
+│   ├── file.js
+│   ├── logger.js
+│   └── time.js
 ```
 ---
 
@@ -53,6 +64,8 @@ start.bat 실행
 ### SERVER_ID=디스코드 서버 ID
 ### CHANNEL_ID=메시지 채널 ID
 
+### MAIN_ID=정보 시트 ID
+### FUND_ID=공금 시트 ID
 ### CACHE=Google Cloud Service Account JSON (Base64)
 ### SCOPES=https://www.googleapis.com/auth/spreadsheets
 
@@ -60,22 +73,28 @@ start.bat 실행
 
 ## 📊 Google Sheets API 기능
 
-- request(id) → 시트 선택
-- get(range) → 데이터 조회
-- find(range, col, value) → 값 검색
-- set(range, ...args) → 데이터 수정
-- update(range, row, args) → 특정 행 수정
-- append(range, ...args) → 데이터 추가
+* Range 기반 조회 (`A:C`)
+* FORMULA 옵션으로 이미지 / 링크 처리 가능
+* CRUD 지원:
+  * get
+  * set
+  * update
+  * find
+  * append
 
 ---
 
 ## 🧾 로그 시스템
 
-logs/YYYY-MM-DD.log
+* logs/YYYY-MM-DD.log 자동 생성
+* 이벤트별 로그 기록:
+  * COMMAND
+  * SLASH
+  * MESSAGE
+  * ERROR
 
-| 타입   | 설명 |
-|--------|-------------|
-| INFO   | 일반 |
-| ERROR  | 에러 |
-| SLASH  | 명령어 |
-| CHAT   | 채팅 |
+---
+
+## 📄 License
+
+MIT License
