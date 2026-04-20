@@ -24,7 +24,7 @@ export async function execute(i) {
     const s = i.options.getString('add');
 
     if (!s) {
-        return i.editReply({ content: '값을 입력해주세요.' });
+        return i.editReply({ content: 'input' });
     }
 
     const embed = new EmbedBuilder()

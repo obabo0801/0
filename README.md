@@ -13,7 +13,7 @@ Jjing Bot은 Discord 슬래시 명령어를 통해 Google Sheets 데이터를 Di
 ---
 
 ## ⚙️ 기능
-* 💬 Slash Command 기반 인터랙션
+* 💬 Slash Command 인터랙션
 * 📊 Google Sheets 연동
 * 📝 로그 시스템 (파일 저장)
 
@@ -73,8 +73,7 @@ start.bat 실행
 
 ## 📊 Google Sheets API 기능
 
-* Range 기반 조회 (`A:C`)
-* FORMULA 옵션으로 이미지 / 링크 처리 가능
+* Range 조회 (`sheet1!A:C`)
 * CRUD 지원:
   * get
   * set

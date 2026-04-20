@@ -31,7 +31,7 @@ import {
 } from '#logger';
 
 import {
-    Sheet
+    createSheets
 } from '#sheets';
 
 import {
@@ -48,9 +48,11 @@ export function startBot() {
     console.log('────────────────────')
     parseEnv('./scripts/.env');
 
-    const client = new Client({
-        intents: [GatewayIntentBits.Guilds]
-    });
+    const client = new Client({intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
+    ]});
 
     client.once('clientReady', async () => {
         client.user.setPresence({
@@ -60,25 +62,14 @@ export function startBot() {
         if (client.isReady()) {
             infoLog(MSG.LOGIN_SUCCESS);
             infoLog('👤', client.user.tag);
+            await createSheets();
             await createGCommands();
-//            await createCommands();
-
-            const s = new Sheet(process.env.MAIN_ID);
-            await s.init();
-            const r = await s.isReady();
-            if (r.ok) {
-                infoLog(MSG.SHEET_SUCCESS);
-                console.log(await s.get('DB!A:C'));
-            } else {
-                infoLog(MSG.SHEET_FAIL);
-            }
+            await createCommands();
         }
     });
 
     client.on('interactionCreate', async (i) => {
-        if (i.isChatInputCommand()) {
-            await handleInteraction(i);
-        }
+        await handleInteraction(i);
     });
 
     client.on('messageCreate', async (m) => {

@@ -50,8 +50,7 @@ export async function createCommands() {
         await rest.put(
             Routes.applicationCommands(
                 process.env.CLIENT_ID), 
-            { body: list.map(cmd => 
-                cmd.data.toJSON()) }
+            { body: [] }
         );
         infoLog(MSG.COMMAND_SUCCESS);
     } catch (e) { 

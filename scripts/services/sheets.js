@@ -6,6 +6,53 @@ import {
     google
 } from 'googleapis';
 
+import {
+    MSG
+} from '#index';
+
+import {
+    infoLog,
+    errorLog
+} from '#logger';
+
+export let main, fund;
+
+export async function createSheets() {
+    try {
+        main = new Sheet(
+            process.env.MAIN_ID);
+        await main.init();
+
+        infoLog(MSG.AUTH_SUCCESS);
+
+        const r = await main.isReady();
+        if (r.ok) {
+            infoLog(MSG.SHEET_SUCCESS);
+        } else {
+            infoLog(MSG.SHEET_FAIL);
+        }
+    } catch (e) {
+        infoLog(MSG.AUTH_FAIL);
+    }
+    
+    try {
+        fund = new Sheet(
+            process.env.FUND_ID);
+        await fund.init();
+        
+        infoLog(MSG.AUTH_SUCCESS);
+
+        const r = await fund.isReady();
+        if (r.ok) {
+            infoLog(MSG.SHEET_SUCCESS);
+        } else {
+            infoLog(MSG.SHEET_FAIL);
+        }
+    } catch (e) {
+        infoLog(MSG.AUTH_FAIL);
+    }
+}
+
 export class Sheet {
 
     constructor(sheetId) {
@@ -29,7 +76,6 @@ export class Sheet {
 
             return { ok: true, code: null };
         } catch (e) {
-            console.log(e);
             this.title = null;
 
             return { ok: false, code: e.code };
@@ -39,8 +85,7 @@ export class Sheet {
     async get(range) {
         const { data } = await this.sheets.spreadsheets.values.get({
             spreadsheetId: this.sheetId,
-            range,
-            valueRenderOption: 'FORMULA'
+            range
         });
 
         return data.values;
@@ -62,7 +107,7 @@ export class Sheet {
         const n = v => String(v ?? '').trim();
 
         return rows.find(row =>
-            row[col] && n(row[col]) === n(value)
+            n(row[col]) === n(value)
         );
     }
 
@@ -90,6 +135,15 @@ export class Sheet {
         await this.sheets.spreadsheets.values.update({
             spreadsheetId: this.sheetId,
             range: target,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: {values: [args]}
+        });
+    }
+
+    async append(range, ...args) {
+        await this.sheets.spreadsheets.values.append({
+            spreadsheetId: this.sheetId,
+            range,
             valueInputOption: 'USER_ENTERED',
             requestBody: {values: [args]}
         });
