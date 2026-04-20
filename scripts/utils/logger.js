@@ -2,26 +2,36 @@
 // Logger
 // =====================
 
-import * as utils from '#utils';
 import path from 'path';
 
+import {
+    readFile,
+    writeFile,
+    appendFile
+} from '#file';
+
+import {
+    getDate,
+    getTime
+} from '#time';
+
 export function readLog(file) {
-    return utils.readFile(
+    return readFile(
         path.join('logs', file));
 }
 
 export function writeLog(file, ...args) {
-    return utils.writeFile(
+    return writeFile(
         path.join('logs', file), ...args);
 }
 
 export function appendLog(file, ...args) {
-    return utils.appendFile(
+    return appendFile(
         path.join('logs', file), ...args);
 }
 
 export function sendLog(type, ...args) {
-    const s = `[${utils.getTime()}] ` +
+    const s = `[${getTime()}] ` +
     `[${type}] ${args.join(' ')}`
     if (type === 'ERROR')
     {
@@ -31,16 +41,15 @@ export function sendLog(type, ...args) {
     } else {
         console.info(s);
     }
-    appendLog(`${utils.getDate()}.log`, s);
+    appendLog(`${getDate()}.log`, s);
 }
 
-export function cmdLog(i, ...args) {
+export function commandLog(i, ...args) {
     console.log('');
     const name = i.nickname ?? 
             i.user.globalName ?? 
             i.user.username;
-    sendLog('CMD', name, 
-        i.commandName, ...args);
+    sendLog('COMMAND', name, i.commandName, ...args);
 }
 
 export function slashLog(i, ...args) {
@@ -51,9 +60,10 @@ export function slashLog(i, ...args) {
     sendLog('SLASH', name, i.commandName, ...args);
 }
 
-export function chatLog(m, ...args) {
+export function messageLog(m, ...args) {
     console.log('');
-    sendLog('CHAT', m.member.displayName, m.content, ...args);
+    const name = m.member.displayName ?? ''
+    sendLog('MESSAGE', name, m.content, ...args);
 }
 
 export function infoLog(...args) {

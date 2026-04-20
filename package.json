@@ -25,10 +25,16 @@
   "imports": {
     "#index": "./index.js",
 
-    "#commands": "./scripts/commands.js",
-    "#db": "./scripts/db.js",
+    "#loader": "./scripts/commands/loader.js",
+    
+    "#client": "./scripts/core/client.js",
+    "#handler": "./scripts/core/handler.js",
 
-    "#utils": "./scripts/utils.js",
-    "#logger": "./scripts/logger.js"
+    "#sheets": "./scripts/services/sheets.js",
+
+    "#base64": "./scripts/utils/base64.js",
+    "#file": "./scripts/utils/file.js",
+    "#time": "./scripts/utils/time.js",
+    "#logger": "./scripts/utils/logger.js"
   }
 }
