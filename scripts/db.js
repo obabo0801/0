@@ -88,7 +88,8 @@ export async function get(range) {
         sendLog('GET', range);
         const { data } =  await sheets
         .spreadsheets.values.get({
-            spreadsheetId: id, range: range
+            spreadsheetId: id, range: range,
+            valueRenderOption: 'FORMULA'
         });
         return data.values;
     } catch (e) {

@@ -12,6 +12,7 @@ import {
     GatewayIntentBits,
     SlashCommandBuilder,
     MessageFlags,
+    EmbedBuilder,
     ContainerBuilder,
     UserSelectMenuBuilder,
     ButtonStyle,
@@ -108,9 +109,45 @@ export function initialize() {
 // Method
 // =====================
 async function findUser(name) {
-    request(process.env.FUND_ID);
-    await isReady();
-    return await find('04!B12:AN', 0, name);
+    request(process.env.MAIN_ID);
+    const r = await isReady();
+
+    if (!r.ok) {
+        return;
+    }
+
+    return await find('DB!A:I', 0, name);
+}
+
+function slashCommand(name, text, type, ...args) {
+    const slash = new SlashCommandBuilder()
+        .setName(name)
+        .setDescription(text);
+    
+    switch (type) {
+        case 0:
+            slash
+            .addStringOption(o =>
+                o.setName(args[0])
+                .setDescription(args[1])
+            );
+            break;
+    }
+    return slash.toJSON();
+}
+
+function embedUser(title, text, image) {
+    const url = 'https://www.google.com';
+    const color = 0xffffff;
+    const embed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(text)
+    .setImage(image)
+    .setThumbnail(image)
+    .setURL(url)
+    .setColor(color)
+    .setTimestamp(new Date());
+    return embed;
 }
 
 // =====================
@@ -145,23 +182,21 @@ async function commandExecute(i) {
 async function commandSlash(i) {
     slashLog(i);
     if (i.commandName === 'jjing') {
-        await i.deferReply({ flags: MessageFlags.Ephemeral });
+        await i.deferReply(
+            { flags: MessageFlags.Ephemeral });
 
         const s = i.options.getString(`add`);
 
         if (!s) {
             return i.editReply({
-                content: `s`, 
-                flags: MessageFlags.Ephemeral
+                content: `s`
             });
         }
 
         slashLog(i, 'jjing');
-        
-        return i.editReply({
-            content: 'jjing', 
-            flags: MessageFlags.Ephemeral
-        });
+
+        const e = embedUser('title', 'text', '');
+        return i.editReply({ embeds: [e] });
     }
 }
 
