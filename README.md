@@ -62,7 +62,6 @@ start.bat 실행
 ### TOKEN=봇 토큰
 ### CLIENT_ID=클라이언트 ID
 ### SERVER_ID=디스코드 서버 ID
-### CHANNEL_ID=메시지 채널 ID
 
 ### MAIN_ID=정보 시트 ID
 ### FUND_ID=공금 시트 ID
