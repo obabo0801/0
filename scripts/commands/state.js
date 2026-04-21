@@ -28,7 +28,7 @@ export const data = (
 export async function autocomplete(i) {
     const focused = i.options.getFocused();
 
-    const f = await main.getValues('정보!A2:A');
+    const f = await main.get('정보!A2:A');
     const names = f.map(r => r[0]);
 
     const filtered = names

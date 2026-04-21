@@ -29,8 +29,7 @@ Jjing Bot은 Discord 슬래시 명령어를 통해 Google Sheets 데이터를 Di
 │   └── handler.js
 
 ├── commands/
-│   ├── food.js
-│   ├── link.js
+│   ├── state.js
 │   └── loader.js
 
 ├── services/
