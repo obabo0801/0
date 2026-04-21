@@ -56,7 +56,7 @@ export function startBot() {
 
     client.once('clientReady', async () => {
         client.user.setPresence({
-            status: 'invisible'
+            status: 'online'
         });
 
         if (client.isReady()) {
@@ -64,7 +64,7 @@ export function startBot() {
             infoLog('👤', client.user.tag);
             await createSheets();
             await createGCommands();
-            await createCommands();
+//            await createCommands();
         }
     });
 
@@ -73,9 +73,7 @@ export function startBot() {
     });
 
     client.on('messageCreate', async (m) => {
-        if (!m.author.bot) {
-            await handleMessage(m);
-        }
+        await handleMessage(m);
     });
 
     client.login(process.env.TOKEN);

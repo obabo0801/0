@@ -3,7 +3,7 @@
 // =====================
 
 import * as 
-commands from '#loader';
+loader from '#loader';
 
 import {
     main,
@@ -17,24 +17,24 @@ import {
 
 export async function handleInteraction(i) {
     if (i.isChatInputCommand()) {
-        const cmd = commands
-        .get(i.commandName);
-        if (!cmd) return;
+        const cmd = loader.getCommand(i.commandName);
+        if (cmd) return cmd.slush(i);
+    }
 
-        try {
-            await cmd.execute(i);
-        } catch (e) {
-            errorLog(e);
-        }
+    else if (i.isButton()) {
+        const btn = loader.getButton(i.customId);
+        if (btn) return btn.button(i);
+    }
+
+    else if (i.isModalSubmit()) {
+        const mdl = loader.getModal(i.customId);
+        if (mdl) return mdl.modal(i);
     }
 }
 
 export async function handleMessage(m) {
-    if (m.content === '!0') {
-        m.channel.sendTyping();
-        if ((await main.isReady()).ok)
-        {
-            m.reply('0');
-        }
+    if (m.content.startsWith('!')) {
+        const msg = loader.getMessage(m.content);
+        if (msg) return msg.message(m);
     }
 }

@@ -2,8 +2,8 @@
 // Loader
 // =====================
 
-import * as food from './food.js';
-import * as link from './link.js';
+import * as state 
+from './state.js';
 
 import {
     REST,
@@ -19,10 +19,31 @@ import {
     errorLog
 } from '#logger';
 
-const list = [food, link];
+const list = [state];
 
-export function get(name) {
-    return list.find(cmd => cmd.data.name === name);
+export function getCommand(name) {
+    return list.find(cmd =>
+        cmd.data?.name === name
+    );
+}
+
+export function getButton(id) {
+    return list.find(cmd =>
+        cmd.customId === id
+    );
+}
+
+export function getModal(id) {
+    return list.find(cmd =>
+        cmd.customId === id
+    );
+}
+
+export function getMessage(m) {
+    return list.find(cmd =>
+        m.toLowerCase()
+        .startsWith(`!${cmd.name}`)
+    );
 }
 
 export async function createGCommands() {
@@ -38,8 +59,7 @@ export async function createGCommands() {
         );
         infoLog(MSG.GCOMMAND_SUCCESS);
     } catch (e) { 
-//        errorLog(MSG.GCOMMAND_FAIL)
-        errorLog(e);
+        errorLog(MSG.GCOMMAND_FAIL)
     }
 }
 
