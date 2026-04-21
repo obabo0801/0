@@ -16,7 +16,12 @@ import {
 } from '#logger';
 
 export async function handleInteraction(i) {
-    if (i.isChatInputCommand()) {
+    if (i.isAutocomplete()) {
+        const ace = loader.getCommand(i.commandName);
+        if (ace) return ace.autocomplete(i);
+    }
+
+    else if (i.isChatInputCommand()) {
         const cmd = loader.getCommand(i.commandName);
         if (cmd) return cmd.slush(i);
     }

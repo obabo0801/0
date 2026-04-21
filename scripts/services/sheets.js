@@ -82,12 +82,22 @@ export class Sheet {
         }
     }
 
-    async get(range) {
+    async getValues(range) {
         const { data } = await this.sheets.spreadsheets.values.get({
             spreadsheetId: this.sheetId,
             range
         });
 
+        return data.values;
+    }
+
+    async getFormula(range) {
+        const { data } = await this.sheets.spreadsheets.values.get({
+            spreadsheetId: this.sheetId,
+            range,
+            valueRenderOption: 'FORMULA'
+        });
+        
         return data.values;
     }
 
@@ -101,7 +111,7 @@ export class Sheet {
     }
 
     async find(range, col, value) {
-        const rows = await this.get(range);
+        const rows = await this.getFormula(range);
         if (!rows) return null;;
 
         const n = v => String(v ?? '').trim();
@@ -112,7 +122,7 @@ export class Sheet {
     }
 
     async findIndex(range, col, value) {
-        const rows = await this.get(range);
+        const rows = await this.getFormula(range);
         if (!rows) return { index: null, row: null };
 
         const n = v => String(v ?? '').trim();
