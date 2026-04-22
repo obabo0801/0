@@ -73,7 +73,7 @@ export async function slush(i) {
     const container = new ContainerBuilder();
     container.setAccentColor(0x2b2d31);
     container.addTextDisplayComponents((t) =>
-        t.setContent(`## 신원 조회 ${name}`)
+        t.setContent(`## 👤 신원 조회 ${name}`)
     )
     container.addSeparatorComponents(s => s)
 

@@ -64,7 +64,7 @@ export function startBot() {
             infoLog('👤', client.user.tag);
             await createSheets();
             await createGCommands();
-//            await createCommands();
+            await createCommands();
         }
     });
 
