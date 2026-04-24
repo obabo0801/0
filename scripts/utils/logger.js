@@ -44,19 +44,17 @@ export function sendLog(type, ...args) {
     appendLog(`${getDate()}.log`, s);
 }
 
-export function commandLog(i, ...args) {
+export function commandLog(...args) {
     console.log('');
-    const name = i.nickname ?? 
-            i.user.globalName ?? 
-            i.user.username;
-    sendLog('COMMAND', name, i.commandName, ...args);
+    sendLog('COMMAND', ...args);
 }
 
 export function slashLog(i, ...args) {
     console.log('');
-    const name = i.nickname ?? 
-            i.user.globalName ?? 
-            i.user.username;
+    const name = (
+        i.member.nickname ??
+        i.user.globalName ??
+        i.user.username);
     sendLog('SLASH', name, i.commandName, ...args);
 }
 

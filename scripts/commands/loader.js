@@ -21,31 +21,6 @@ import {
 
 const list = [state];
 
-export function getCommand(name) {
-    return list.find(cmd =>
-        cmd.data?.name === name
-    );
-}
-
-export function getButton(id) {
-    return list.find(cmd =>
-        cmd.customId === id
-    );
-}
-
-export function getModal(id) {
-    return list.find(cmd =>
-        cmd.customId === id
-    );
-}
-
-export function getMessage(m) {
-    return list.find(cmd =>
-        m.toLowerCase()
-        .startsWith(`!${cmd.name}`)
-    );
-}
-
 export async function createGCommands() {
     try {
         const rest = new REST({ version: '10' })
@@ -54,8 +29,8 @@ export async function createGCommands() {
             Routes.applicationGuildCommands(
                 process.env.CLIENT_ID, 
                 process.env.SERVER_ID), 
-            { body: list.map(cmd => 
-                cmd.data.toJSON()) }
+            { body: list.flatMap(cmd => 
+                cmd.commands.map(c => c.toJSON())) }
         );
         infoLog(MSG.GCOMMAND_SUCCESS);
     } catch (e) { 
@@ -76,4 +51,23 @@ export async function createCommands() {
     } catch (e) { 
         errorLog(MSG.COMMAND_FAIL)
     }
+}
+
+export function findCommands(name) {
+    return list.find(cmd =>
+        cmd.commands.some(c => c.name.startsWith(name))
+    );
+}
+
+export function findCustomIds(id) {
+    return list.find(cmd =>
+        cmd.customIds.some(c => id.startsWith(c))
+    );
+}
+
+export function findMessages(m) {
+    return list.find(cmd =>
+        m.toLowerCase()
+        .startsWith(`!${cmd.name}`)
+    );
 }

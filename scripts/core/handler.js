@@ -5,41 +5,36 @@
 import * as 
 loader from '#loader';
 
-import {
-    main,
-    fund
-} from '#sheets';
-
-import {
-    infoLog,
-    errorLog
-} from '#logger';
-
 export async function handleInteraction(i) {
+    if (i.isChatInputCommand()) {
+        const h = loader.findCommands(i.commandName);
+        if (h?.slush) return await h.slush(i);
+    }
+
     if (i.isAutocomplete()) {
-        const ace = loader.getCommand(i.commandName);
-        if (ace) return ace.autocomplete(i);
+        const h = loader.findCommands(i.commandName);
+        if (h?.auto) return await h.auto(i);
     }
 
-    else if (i.isChatInputCommand()) {
-        const cmd = loader.getCommand(i.commandName);
-        if (cmd) return cmd.slush(i);
+    if (i.isButton()) {
+        const h = loader.findCustomIds(i.customId);
+        if (h?.button) return await h.button(i);
     }
 
-    else if (i.isButton()) {
-        const btn = loader.getButton(i.customId);
-        if (btn) return btn.button(i);
+    if (i.isStringSelectMenu()) {
+        const h = loader.findCustomIds(i.customId);
+        if (h?.menu) return await h.menu(i);
     }
 
-    else if (i.isModalSubmit()) {
-        const mdl = loader.getModal(i.customId);
-        if (mdl) return mdl.modal(i);
+    if (i.isModalSubmit()) {
+        const h = loader.findCustomIds(i.customId);
+        if (h?.modal) return await h.modal(i);
     }
 }
 
 export async function handleMessage(m) {
     if (m.content.startsWith('!')) {
-        const msg = loader.getMessage(m.content);
+        const msg = loader.findMessages(m.content);
         if (msg) return msg.message(m);
     }
 }

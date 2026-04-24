@@ -3,150 +3,198 @@
 // =====================
 
 import {
-    ContainerBuilder,
     SlashCommandBuilder,
+    StringSelectMenuBuilder,
+    ContainerBuilder,
     MessageFlags
 } from 'discord.js';
 
 import {
-    main,
-    fund
+    main
 } from '#sheets'
 
-export const data = (
+import {
+    slashLog
+} from '#logger'
+
+export const commands = [
     new SlashCommandBuilder()
-    .setName('조회')
-    .setDescription('조회')
-    .addStringOption(o =>
-        o.setName('이름')
-        .setDescription('이름')
-        .setRequired(true)
-        .setAutocomplete(true)
-    )
+        .setName('조회')
+        .setDescription('조회')
+        .addStringOption(o =>
+            o.setName('이름')
+            .setDescription('이름')
+        )
+];
+
+export const customIds = [
+    'categorySelect'
+];
+
+const createContainer  = (value) =>
+    new ContainerBuilder()
+    .setAccentColor(0x2b2d31)
+    .addTextDisplayComponents(t =>
+        t.setContent(value)
 );
 
-export async function autocomplete(i) {
-    const focused = i.options.getFocused();
-
-    const f = await main.get('정보!A2:A');
-    const names = f.map(r => r[0]);
-
-    const filtered = names
-        .filter(n => n.includes(focused ?? ''))
-        .slice(0, 25);
-    
-    return i.respond(
-        filtered.map(n => ({name: n, value: n}))
+const addField = (c, title, value) => {
+    if (!value) return;
+    c
+    .addSeparatorComponents(s => s)
+    .addTextDisplayComponents(t =>
+        t.setContent(`### ${title}\n${value}`)
     );
 }
 
-export async function slush(i) {
-    await i.deferReply();
+async function build(value, msg) {
+    const rows = await main.find(
+        '정보!A2:H', 
+        0, 
+        value, 
+        { option: 'FORMULA' }
+    );
 
-    const input = i.options.getString('이름');
+    if (!rows) {
+        const container = createContainer(
+            `⚠️ ${value} 데이터가 없습니다`
+        );
 
-    if (!input) {
-        await i.editReply({
-            content: '이름이 입력되지 않았습니다.',
-            flags: MessageFlags.Ephemeral
+        await msg.edit({
+            components:[container],
+            flags: MessageFlags.IsComponentsV2
         });
+
         return setTimeout(async () => {
-            i.deleteReply().catch(() => {});
+             msg.delete().catch(() => {});
         }, 30000);
     }
 
-    const s = await main.find('정보!A2:H', 0, input);
-
-    if (!s) {
-        await i.editReply({
-            content: `${input}에 대한 데이터를 찾을 수 없습니다`,
-            flags: MessageFlags.Ephemeral
-        });
-        return setTimeout(async () => {
-            i.deleteReply().catch(() => {});
-        }, 3000);
-    }
-
     const [name, image, gender, ssn, 
-        phone, account, date, note] = s;
-    
-    const container = new ContainerBuilder();
-    container.setAccentColor(0x2b2d31);
-    container.addTextDisplayComponents((t) =>
-        t.setContent(`## 👤 신원 조회 ${name}`)
-    )
-    container.addSeparatorComponents(s => s)
+    phone, account, date, note] = rows;
 
-    const match = image?.match(/"(.*?)"/);
-    const url = match ? match[1] : undefined;
+    const result = createContainer(`## 👤 신원 조회 ${name}`)
+        .addSeparatorComponents(s => s);
+        
+    const url = image?.match(/"(.*?)"/)?.[1];
+        
     if (url) {
-        container.addMediaGalleryComponents((g) =>
+        result.addMediaGalleryComponents((g) =>
             g.addItems((item) => item.setURL(url))
         )
     }
 
-    if (name) {
-        container.addTextDisplayComponents((t) =>
-            t.setContent(`### 이름\n${name}`)
-        )
+    addField(result, '이름', name);
+    addField(result, 'SSN', ssn);
+    addField(result, '성별', gender);
+    addField(result, '전화번호', phone);
+    addField(result, '계좌번호', account);
+    addField(result, '입국일', date);
+    addField(result, '메모', note);
+
+    return await msg.edit({
+        components: [result],
+        flags: MessageFlags.IsComponentsV2
+    })
+}
+
+export async function slush(i) {
+    const name = (
+        i.member.nickname ??
+        i.user.globalName ??
+        i.user.username);
+
+    await i.reply({
+        components: [createContainer(
+            `👤 ${name}님이 신원 정보를 조회 중입니다`
+        )],
+        flags: MessageFlags.IsComponentsV2
+    });
+
+    const msg = await i.fetchReply()
+
+    const input = i.options.getString('이름');
+
+    if (input) {
+        slashLog(i, input);
+
+        return await build(input, msg);
+    } else {
+        slashLog(i);
     }
+
+    const rows = await main.get(
+        '정보!A2:A',
+        { option: 'FORMATTED_VALUE' }
+    );
+
+    const options = rows
+        .filter(([v]) => v)
+        .map(([label]) => ({
+            label,
+            value: label,
+            emoji: '👤'
+        }));
     
-    if (ssn) {
-        container.addSeparatorComponents(s => s)
-        container.addTextDisplayComponents((t) =>
-            t.setContent(`### SSN\n${ssn}`)
-        )
-    }
-
-    if (gender) {
-        container.addSeparatorComponents(s => s)
-        container.addTextDisplayComponents((t) =>
-            t.setContent(`### 성별\n${gender}`)
-        )
-    }
+    const menu = new StringSelectMenuBuilder()
+        .setCustomId(`${customIds[0]}:${msg.id}`)
+        .setPlaceholder('조회할 대상을 선택해주세요')
+        .addOptions(options);
     
-    if (phone) {
-        container.addSeparatorComponents(s => s)
-        container.addTextDisplayComponents((t) =>
-            t.setContent(`### 전화번호\n${phone}`)
+    const container = createContainer(
+            '## 👤 신원 조회'
         )
-    }
-
-    if (account) {
-        container.addSeparatorComponents(s => s)
-        container.addTextDisplayComponents((t) =>
-            t.setContent(`### 계좌번호\n${account}`)
-        )
-    }
-
-    if (date) {
-        container.addSeparatorComponents(s => s)
-        container.addTextDisplayComponents((t) =>
-            t.setContent(`### 입국일\n${date}`)
+        .addSeparatorComponents(s => s)
+        .addActionRowComponents(row =>
+            row.setComponents(menu)
         );
-    }
+    
+    setTimeout(async () => {
+        const now = await i.fetchReply()
+        .catch(() => null);
+        if (!now) return;
 
-    if (note) {
-        container.addSeparatorComponents(s => s)
-        container.addTextDisplayComponents((t) =>
-            t.setContent(`### 메모\n${note}`)
-        );
-    }
+        if (JSON.stringify(msg.components) === 
+            JSON.stringify(now.components)) {
+            msg.delete().catch(() => {});
+        }
+    }, 90000);
 
-    return await i.editReply({
+    return i.followUp({
         components: [container],
-        flags: MessageFlags.IsComponentsV2,
+        flags: MessageFlags.Ephemeral |
+        MessageFlags.IsComponentsV2,
     });
 }
 
-export async function button(i) {
-    console.log(i);
-}
+export async function menu(i) {
+    if (i.customId.startsWith(customIds[0])) {
+        await i.deferUpdate();
 
-export async function modal(i) {
-    console.log(i);
-}
+        const selected = i.values[0];
+        const [, id] = i.customId.split(':');
 
-export async function message(m) {
-    console.log(m);
+
+        const msg = await i.channel.messages
+        .fetch(id).catch(() => null);
+        
+        if (!msg) {
+            const container = createContainer(
+                `⚠️ 메시지가 만료되었습니다`
+            );
+
+            i.editReply({
+                components:[container],
+                flags: MessageFlags.IsComponentsV2
+            });
+
+            return setTimeout(() => {
+                i.deleteReply().catch(() => {});
+            }, 30000);
+        }
+
+        await i.deleteReply();
+
+        return await build(selected, msg);
+    }
 }
